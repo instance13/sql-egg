@@ -147,3 +147,221 @@ SELECT FORMAT(promedio,2,'es_AR')
 FROM estudiantes
 WHERE nombre = 'Carlos' and apellido = "López";
 
+/*
+small review: -
+medium review: --
+large review: ---
+
+1. Avanzando con el uso de la cláusula SELECT --
+
+2. Uso de JOINs en MySQL --
+2. subqueries --
+
+Consultas multitablas ---
+Uso de Tablas Temporales ---
+
+Lenguaje DDL y DML -
+Funciones de Texto -
+Funciones de Fecha y Hora -
+Vistas y funciones matemáticas -
+
+Actividad Integradora (MySQL)
+Evaluación y despedida (MySQL)
+Primeros pasos con MySQL
+Comando SELECT
+*/
+desc estudiantes;
+select nombre, apellido from estudiantes;
+select * from estudiantes, empleados;
+select distinct nombre from empleados order by nombre desc;
+desc productos;
+
+-- [!] select clauses [!]
+
+-- * group by *
+-- Exercise: Agrupa las ventas por empleado y muestra la cantidad total de ventas realizadas por cada empleado.
+desc empleados;
+desc ventas;
+
+select empleados.nombre, ventas.empleado_id 
+from empleados, ventas 
+group by empleado_id;
+
+SELECT empleados.nombre, ventas.empleado_id, COUNT(ventas.id) AS total_ventas
+FROM empleados, ventas
+WHERE empleados.id = ventas.empleado_id
+GROUP BY empleados.nombre, ventas.empleado_id;
+
+-- Exercise: Agrupa los productos por precio y muestra la cantidad de productos con el mismo precio.
+select precio -- -> counting would go in here because filtering goes later. 
+from productos
+-- where -> where is not neccessary here. group by will handle the logic of product with the same prices naturally.
+GROUP BY precio;
+
+desc productos;
+
+SELECT precio, COUNT(*) AS cantidad_productos
+FROM productos
+GROUP BY precio;
+
+-- Exercise: Agrupa los empleados por departamento y muestra la cantidad de empleados en cada departamento.
+select * from empleados;
+select departamento_id, count(*) 
+from empleados 
+group by departamento_id;
+
+-- * in *
+-- Busca los empleados que trabajan en los departamentos 2 o 3.
+select nombre, apellido from empleados where departamento_id in(2, 3);
+
+-- Trae a los clientes que no tengan los IDs 2, 4 o 6.
+select nombre from clientes where id not in(2, 4, 6);
+
+-- Busca los productos cuyos precios son 350.00, 480.00 o 800.00.
+select nombre from productos where precio in(350.00, 480.00, 800.00);
+
+-- * having *
+-- Encuentra los departamentos con un salario promedio de sus empleados superior a $3,000.
+select avg(salario) salario_promedio_departamento 
+from empleados 
+group by departamento_id 
+having avg(salario) > 3000;
+
+CREATE TABLE envios (
+id INT AUTO_INCREMENT PRIMARY KEY,
+fecha_envio DATETIME,
+fecha_entrega DATETIME,
+codigo_producto VARCHAR(10)
+);
+
+INSERT INTO envios (fecha_envio, fecha_entrega, codigo_producto) VALUES 
+('2022-01-15 08:00:00','2022-01-20 12:30:00','ABC123'),
+('2022-02-10 10:15:00','2022-02-15 14:45:00','XYZ789'),
+('2022-03-05 09:30:00','2022-03-10 13:20:00','PQR456'),
+('2022-04-20 11:45:00','2022-04-25 15:10:00','LMN001'),
+('2022-05-12 07:55:00','2022-05-17 10:25:00','DEF777'),
+('2022-06-08 08:20:00','2022-06-13 12:40:00','GHI888'),
+('2022-07-03 10:05:00','2022-07-08 14:15:00','JKL999');
+
+-- Utilizando la función DATE_ADD, 
+-- * calcula la fecha de entrega programada para un envío cuando se le añaden 5 días a la fecha de envío.
+-- * envío con código de producto 'ABC123' 
+
+-- date_add(date, interval)
+
+select fecha_envio, date_add(fecha_envio, INTERVAL 5 DAY)
+from envios 
+where codigo_producto = "ABC123";
+
+-- Utilizando la función ADDTIME, encuentra la hora estimada de entrega para un envío con código de producto 'XYZ789' si se suma 4 horas y 30 minutos a la hora de entrega. 
+SELECT codigo_producto, fecha_entrega, ADDTIME(fecha_entrega, '04:30:00') AS hora_entrega_estimada
+FROM envios
+WHERE codigo_producto = 'XYZ789';
+
+-- Utilizando la función CONVERT_TZ, convierte la fecha de envío de un envío con código de producto 'PQR456' de la zona horaria 'UTC' (+00:00) a la zona horaria de Argentina GMT-3 (-03:00).
+SELECT CONVERT_TZ(fecha_envio, '+00:00', '-03:00') AS fecha_envio_argentina
+FROM envios
+WHERE codigo_producto = 'PQR456';
+
+-- Calcula la diferencia en días entre la fecha de entrega y la fecha de envío para el envío con código de producto 'LMN001' utilizando la función DATEDIFF.
+select fecha_entrega, fecha_envio, datediff(fecha_entrega, fecha_envio) from envios where codigo_producto = "LMN001";
+
+-- Utiliza la función CURDATE para obtener la fecha actual y, a continuación, obtener la diferencia en días entre la fecha de entrega con código de producto 'DEF777' y la fecha actual.
+select datediff(fecha_entrega, curdate()) from envios where codigo_producto = "DEF777";
+
+-- Utiliza la función DATE para extraer la fecha de envío del envío con ID 3.
+SELECT DATE(fecha_envio) AS fecha_envio_solo
+FROM envios
+WHERE id = 3;
+
+-- Utilizando la función CURTIME, obtén la hora actual del sistema.
+SELECT CURTIME() AS hora_actual;
+
+-- Utiliza la función DATE_ADD para calcular la fecha de entrega programada para el envío con código de producto 'XYZ789' si se le agregan 3 días a la fecha de envío.
+select fecha_entrega, date_add(fecha_entrega, INTERVAL 3 DAY) from envios where codigo_producto = "XYZ789";
+
+-- Utiliza la función DATE_FORMAT para mostrar la fecha de envío del envío con ID 6 en el formato 'DD-MM-YYYY'.
+select date_format(fecha_envio, "%d-%m-%Y") from envios where id = 6;
+
+-- Utiliza la función DATE_SUB para calcular la fecha de envío del envío con ID 4 si se le restan 2 días.
+select fecha_envio, date_sub(fecha_envio, INTERVAL 2 DAY) from envios where id = 4;
+
+-- Utiliza la función DAY para obtener el día del mes en que se realizó el envío con ID 2.
+select day(fecha_envio) from envios where id = 2;
+
+-- Utiliza la función DAYNAME para obtener el nombre del día de la semana en que se entregará el envío con código de producto 'DEF777'.
+SELECT DAYNAME(fecha_entrega) AS dia_de_la_semana
+FROM envios
+WHERE codigo_producto = 'DEF777';
+
+-- Utiliza la función DAYOFMONTH para obtener el día del mes en que se entregará el envío con código de producto 'GHI888'.
+SELECT DAYOFMONTH(fecha_entrega) AS dia_del_mes
+FROM envios
+WHERE codigo_producto = 'GHI888';
+
+-- Utiliza la función PERIOD_ADD para agregar un período de 3 meses al año-mes '2022-07'.
+
+SELECT DATE_FORMAT(STR_TO_DATE(CONCAT(PERIOD_ADD(202207, 3), '01'), '%Y%m%d'), '%Y - %b') AS nuevo_periodo;
+
+select date_format((period_add(202207, 6)), "%y-%m");
+
+-- Utiliza la función PERIOD_DIFF para calcular el número de meses entre los períodos '2022-03' y '2022-12'.
+select period_diff(202212,202203);
+
+-- Utiliza la función QUARTER para obtener el trimestre de la fecha de entrega del envío con código de producto 'PQR456'.
+select fecha_entrega, quarter(fecha_entrega) from envios where codigo_producto = "PQR456";
+
+-- Utiliza la función SEC_TO_TIME para convertir 3665 segundos en formato 'hh:mm:ss'.
+select sec_to_time(3665);
+
+-- Utiliza la función SECOND para obtener los segundos de la hora de envío del envío con ID 2.
+desc envios;
+select second(fecha_envio) from envios where id = 2;
+
+-- Utiliza la función STR_TO_DATE para convertir la cadena '2022()08()15' en una fecha.
+select str_to_date('2022()08()15', "%Y()%m()%d");
+
+-- Utiliza la función SUBTIME para restar 2 horas y 15 minutos a la hora de envío del envío con ID 7.
+SELECT fecha_envio, SUBTIME(TIME(fecha_envio), '02:15:00') AS hora_modificada
+FROM envios
+WHERE id = 7;
+
+-- Utiliza la función TIME para extraer la porción de tiempo de la fecha de envío del envío con ID 1.
+SELECT fecha_envio,TIME(fecha_envio) AS hora_de_envio
+FROM envios
+WHERE id = 1;
+
+-- Utiliza la función TIME_FORMAT para formatear la hora de envío del envío con ID 2 en 'hh:mm:ss'.
+select time_format(fecha_envio, "%H:%i:%s") from envios where id = 2;
+
+-- Utiliza la función TIME_TO_SEC para convertir la hora de envío del envío con ID 3 en segundos.
+select time_to_sec(fecha_envio) from envios where id = 3;
+
+-- Utiliza la función TIMEDIFF para calcular la diferencia de horas entre las fechas de envío y entrega del envío con ID 4.
+select timediff(fecha_entrega,fecha_envio) from envios where id = 4;
+
+-- Utiliza la función SYSDATE para obtener la hora exacta en la que se ejecuta la función en la consulta. Para comprobar esto invoca SYSDATE, luego la función SLEEP durante 5 segundos y luego vuelve a invocar la función SYSDATE, y verifica la diferencia entre ambas invocaciones con TIMEDIFF.
+CREATE TEMPORARY TABLE test AS
+SELECT SYSDATE() AS hora_inicial,SLEEP(5),SYSDATE() AS hora_final;
+select TIMEDIFF(hora_inicial,hora_final) AS diferencia from test;
+
+SELECT SYSDATE() AS hora_inicial, SLEEP(5), SYSDATE() AS hora_final, TIMEDIFF(SYSDATE(), (SELECT SYSDATE() LIMIT 1)) AS diferencia;
+
+SELECT SYSDATE() AS tiempo_inicio;
+SELECT SLEEP(5);
+SELECT SYSDATE() AS tiempo_final;
+SELECT TIMEDIFF(SYSDATE(), (SELECT SYSDATE() FROM DUAL)) AS diferencia_tiempo;
+
+-- Crea una consulta que utilice la función TIMESTAMP para obtener todos los valores de fecha_envio sumandole 12 horas.
+select fecha_envio fecha_original, timestamp(fecha_envio, 12) from envios;
+
+-- Utiliza la función TIMESTAMPADD para agregar 3 horas a la fecha de entrega del envío con código de producto 'XYZ789'.
+select timestampadd(HOUR, 3, fecha_entrega) from envios where codigo_producto = "XYZ789";
+
+-- 
+SELECT EXTRACT(YEAR FROM fecha_envio) AS anio_envio
+FROM envios
+WHERE codigo_producto = 'LMN001';
+
+-- 
+SELECT FROM_DAYS(737402) AS fecha_correspondiente;
